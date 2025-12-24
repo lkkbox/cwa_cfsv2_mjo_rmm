@@ -10,12 +10,12 @@ runDir="$(dirname "$(realpath "$0")")"  # get the current directory as prefix
 
 
 # copy the code and clim file
-# (daymean files are optional, but copying is much faster than processing them again)
 rsync -ruPavL \
         --exclude="tmps" --exclude="logs" --exclude="*.png" \
-        h6dm23:/nwpr/gfs/com120/5_CFS_MJO/source/ $runDir
-        # \ # --exclude="data/daymean" \
-
+        h6dm23:/nwpr/gfs/com120/5_CFS_MJO/source/ $runDir \
+        --exclude=".git" \
+        # --exclude="data/daymean" 
+        # ^^^^ (daymean files are optional, but copying is much faster than processing them again)
 
 # linking op output directory to local
 if [ ! -L $runDir/data/op_src ]; then
@@ -35,6 +35,3 @@ chmod 744 $runDir/*.py
 chmod 744 $runDir/*.sh
 
 
-# getting this 250128 file is necessary because the op source is missing
-mkdir -p $runDir/data/daymean/2025
-# rsync -avu h6dm23:/nwpr/gfs/com120/7_CFS_BSISO_APCC/3_op/data/daymean/2025/250128_*.nc $runDir/data/daymean/2025
