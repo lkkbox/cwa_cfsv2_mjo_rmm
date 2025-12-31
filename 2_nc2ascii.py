@@ -451,9 +451,10 @@ def main():
 
         #
         # ---- remove the previous 120 day mean
-        combinedData = np.nan * np.ones((NUM_FORECASTS, NUM_ANALYSIS_OUT + NUM_LEADS))
+        combinedData = np.nan * np.ones((NUM_FORECASTS, NUM_ANALYSIS_OUT + NUM_LEADS, NX))
         for iForecast in range(NUM_FORECASTS):
             data = np.concatenate((analysis, forecast[iForecast, :]), axis=0)
+            data = np.squeeze(data, axis=-2) # flatten latitude
             data = rmm.remove_previous_runmean(data, n=NUM120)
             combinedData[iForecast, :] = data[NUM120:, :]
 
