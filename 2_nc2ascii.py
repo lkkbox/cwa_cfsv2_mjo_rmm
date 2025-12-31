@@ -17,10 +17,10 @@ The script converts the CFSv2 forecast data for ascii format of MJO RMM indices.
 
 Steps (see the "pre-checking" part and the "run" function):
     0- [pre-check] check the data file status and determine the init dates to use
-    1- [read_bc_forecast] analysis - read: obs clim, model clim, model raw
+    1- [read_bc_analysis_forecast] analysis - read: obs clim, model clim, model raw
                       - bias_correction = model_raw - (model_clim + obs_clim)
-    2- [read_bc_forecast] forecast - same as analysis but with 3 inits
-    3- [read_bc_forecast] write output 
+    2- [read_bc_analysis_forecast] forecast - same as analysis but with 3 inits
+    3- [read_bc_analysis_forecast] write output 
 '''
 import tools.timetools as tt
 import tools.nctools as nct
@@ -98,11 +98,15 @@ def main():
     #
     # ---- settings
     # -- run settings
-    NUM_FORECASTS = 3  # [T-1], [T-2], [T-3], ...
+    NUM_FORECASTS = 3  # number of initializations [T-1], [T-2], [T-3], ...
     ENS_NAMES = ['m000', 'm001', 'm002', 'mavg']
-    NUM_LEADS = 40
-    NUM_ANALYSIS = 120
-    ANALYSIS_START = -119 # T-119, T-118, ... T-0
+    NUM_LEADS = 40 # days to write to forecast output
+
+    NUM120 = 120 # magic number for RMM calculation
+    NUM_ANALYSIS_OUT = 30  # days to write to analysis output
+    NUM_ANALYSIS = NUM120 + NUM_ANALYSIS_OUT
+    ANALYSIS_START = -(NUM120 - 1) - NUM_ANALYSIS_OUT # T-119, T-118, ... T-0
+
     ANALYSIS_LEAD_MAX = 3
     VARNAMES = ['u850', 'olr', 'u200']
     NX, NY = 144, 13
@@ -349,7 +353,7 @@ def main():
     # ---------------------------------- #
     # ---- read bias corrected data ---- #
     # ---------------------------------- #
-    def read_bc_forecast(varName):
+    def read_bc_analysis_forecast(varName):
         #
         # ---- read obs clim
         logging.info(f'  reading {varName}')
@@ -449,22 +453,31 @@ def main():
         # ---- remove the previous 120 day mean
         for iForecast in range(NUM_FORECASTS):
             data = np.concatenate((analysis, forecast[iForecast, :]), axis=0)
-            data = rmm.remove_previous_runmean(data, n=NUM_ANALYSIS)
+            data = rmm.remove_previous_runmean(data, n=NUM120)
             forecast[iForecast, :] = data[NUM_ANALYSIS:, :]
 
+        analysis_out = rmm.remove_previous_runmean(analysis, n=NUM120)
+
+        #
+        # ---- concatenate analysis_out and forecast
         forecast = np.squeeze(forecast, axis=-2) # flatten the lat dimension
-        return forecast
+        analysis_out = np.squeeze(analysis_out, axis=-2)
+        output = [
+            np.concatenate((analysis_out, forecast[iForecast, :]), axis=0)
+            for iForecast in range(NUM_FORECASTS)
+        ]
+        return output
 
     # ------------------------------ #
     # ---- MJO RMM calculations ---- #
     # ------------------------------ #
     logging.info(f'calculating RMM indices')
     datas = {
-        vn: read_bc_forecast(vn)
+        vn: read_bc_analysis_forecast(vn)
         for vn in VARNAMES
     }
 
-    pc1s, pc2s = rmm.cal_pc(**datas)
+    pc1s, pc2s = rmm.cal_pc(**datas, sub120=False)
 
     # append an ensemble mean
     pc1s = np.concatenate((pc1s, np.nanmean(pc1s, axis=0, keepdims=True)), axis=0)
@@ -477,7 +490,7 @@ def main():
     for iForecast in range(NUM_FORECASTS + 1):
         write_output(
             getDesPath(ENS_NAMES[iForecast]),
-            forecastValidDates,
+            [*analysisValidDates[-NUM_ANALYSIS_OUT:], *forecastValidDates],
             pc1s[iForecast, :],
             pc2s[iForecast, :],
             phases[iForecast, :],
