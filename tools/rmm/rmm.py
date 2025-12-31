@@ -76,7 +76,8 @@ def remove_previous_runmean(y0:np.ndarray, n:int):
     nt = y0.shape[0]
     y1 = np.nan * np.ones(y0.shape)
 
-    for it in range(nt):
+    y1[0, :] = 0
+    for it in range(1, nt):
         if it < n:
             ts = 0
         else:

@@ -67,7 +67,7 @@ def main():
     # ---- settings
     # -- run settings
     NUMLEADS = 45
-    NUMINITS = 121 # forecast: T-1 to T-3, analysis: T-2 to T-121 -> all: T-1 to T-121
+    NUMINITS = 121 + 30 # forecast: T-1 to T-3, analysis: T-2 to T-121 -> all: T-1 to T-121, another 30 days for writing analysis output
     CLEANTMPDIR = True # auto delete the tmpdir, set to False for debug
     VARNAMES = ['u850', 'olr', 'u200']
     VARIABLES = {

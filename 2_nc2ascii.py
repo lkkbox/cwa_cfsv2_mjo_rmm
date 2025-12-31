@@ -99,7 +99,7 @@ def main():
     # ---- settings
     # -- run settings
     NUM_FORECASTS = 3  # number of initializations [T-1], [T-2], [T-3], ...
-    ENS_NAMES = ['m000', 'm001', 'm002', 'mavg']
+    ENS_NAMES = ['m000', 'm001', 'm002', 'mavg'] # n = NUM_FORECASTS + 1, last one = time-lag ensemble average
     NUM_LEADS = 40 # days to write to forecast output
 
     NUM120 = 120 # magic number for RMM calculation
@@ -455,6 +455,8 @@ def main():
             data = np.concatenate((analysis, forecast[iForecast, :]), axis=0)
             data = rmm.remove_previous_runmean(data, n=NUM120)
             forecast[iForecast, :] = data[NUM_ANALYSIS:, :]
+
+        print(f'!!!! {analysis.shape = }')
 
         analysis_out = rmm.remove_previous_runmean(analysis, n=NUM120)
 
