@@ -76,7 +76,7 @@ def main():
             'cdoVarName': 'avg_u',
         },
         'u200': {
-            'grib2matcher': ':UGRD:850 mb:',
+            'grib2matcher': ':UGRD:200 mb:',
             'cdoVarName': 'avg_u',
         },
         'olr': {
